@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include<stdlib.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -18,16 +18,14 @@ int main() {
     return 0;
 }
 
-// home dir . == ..
-void print_path_to(ino_t inode) {
-    ino_t curr_inode;
+void print_path_to(ino_t curr_inode) {
+    ino_t parent_inode = get_inode("..");
     char name[BUFSIZ];
-    
-    if (get_inode("..") != inode) {
+    // home dir . == ..
+    if (parent_inode != curr_inode) {
         chdir("..");
-        inum_to_name(inode, name, BUFSIZ);
-        curr_inode = get_inode(".");
-        print_path_to(curr_inode);
+        inum_to_name(curr_inode, name, BUFSIZ);
+        print_path_to(parent_inode);
         printf("%s/", name);
     }
 }
@@ -41,14 +39,18 @@ void inum_to_name(ino_t inode, char *namebuf, int buflen) {
         exit(1);
     }
     while ((direntp = readdir(dir_ptr)) != NULL) {
+        // printf("%d\n", direntp->d_ino);
+        // for some reason the inode numbers for my root dir are not correct...
         if (direntp->d_ino == inode) {
             strncpy(namebuf, direntp->d_name, buflen);
             namebuf[buflen-1] = '\0';
             closedir(dir_ptr);
+            printf("\n\n");
             return;
         }
     }
     printf("Unable to find inode %d \n", inode);
+    strncpy(namebuf, "", buflen);
 }
 
 ino_t get_inode(char *fname) {
